@@ -4,11 +4,9 @@
 
 该项目专为 **NVIDIA Edge 设备 (如 Jetson) 或桌面显卡 (如 GTX 1650)** 优化，旨在解决单一算法在无人机/飞行器跟踪中的局限性，实现了**高帧率**与**高鲁棒性**的平衡。
 
-
 <div align="center">
-  <img src="assets/小目标无人机检测框架.jpg" width="80%" alt="小目标无人机检测框架" />
+  <img src="assets/result_.png" width="80%" alt="小目标无人机检测框架" />
 </div>
-
 ## ✨ 核心特性
 
 * **⚡ TensorRT 加速**: YOLOv5 检测器经过 TensorRT 引擎量化与加速，支持 FP16/FP32 推理。
@@ -22,8 +20,11 @@
 
 ## 🏗️ 系统架构
 
-系统采用有限状态机 (FSM) 进行调度：
+<div align="center">
+  <img src="assets/小目标无人机检测框架.jpg" width="80%" alt="小目标无人机检测框架" />
+</div>
 
+系统采用有限状态机 (FSM) 进行调度：
 1.  **SEARCHING (搜索模式)**:
     * 优先使用 **YOLOv5** 检测目标。
     * 若 YOLO 连续 N 帧失败，自动降级为 **MOD (运动检测)**。
@@ -32,18 +33,3 @@
 3.  **TRACKING (跟踪模式)**:
     * 使用 **LightTrack** 进行高速跟踪。
     * 实时监控置信度 (Score)，若低于阈值 (如 0.98) 则触发重检测机制。
-
-## 📂 文件结构
-
-```text
-.
-├── main.py                # 主程序入口，包含状态机和分帧逻辑
-├── YOLO_Engine.py         # 封装的 TensorRT YOLO 检测器 (含 CUDA 上下文修复)
-├── LightTrack_Engine.py   # 封装的 LightTrack 跟踪引擎
-├── MOD2.py                # 运动目标检测算法 (Motion Object Detection)
-├── models/                # 模型权重文件夹
-│   ├── yolov5s_GLAD.engine      # YOLO TensorRT 引擎
-│   ├── libmyplugins.so          # TensorRT 插件库
-│   ├── ligthtrack_init.pt       # LightTrack 初始化权重
-│   └── ligthtrack_update.pt     # LightTrack 跟踪权重
-└── README.md              # 项目说明

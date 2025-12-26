@@ -1,12 +1,11 @@
 # 🚀 Hybrid High-Performance Object Tracking System
 
-这是一个基于 **YOLOv5 (TensorRT)**、**LightTrack** 和 **MOD (运动目标检测)** 的高性能混合目标跟踪系统。
-
-该项目专为 **NVIDIA Edge 设备 (如 Jetson) 或桌面显卡 (如 GTX 1650)** 优化，旨在解决单一算法在无人机/飞行器跟踪中的局限性，实现了**高帧率**与**高鲁棒性**的平衡。
+这是一个基于 **YOLOv5 (TensorRT)**、**LightTrack** 和 **MOD (运动目标检测)** 的混合目标跟踪系统。
 
 <div align="center">
   <img src="assets/result_.png" width="80%" alt="小目标无人机检测框架" />
 </div>
+
 ## ✨ 核心特性
 
 * **⚡ TensorRT 加速**: YOLOv5 检测器经过 TensorRT 引擎量化与加速，支持 FP16/FP32 推理。

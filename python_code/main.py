@@ -7,12 +7,13 @@ import ctypes
 
 # ==================== 导入自定义模块 ====================
 from MOD2 import MOD2_global
-from LightTrack_Engine import LightTrackEngine
+# from LightTrack_Engine import LightTrackEngine
+from LightTrack_FastTrack import LightTrackEngine
 from YOLO_Engine import YOLO_Detector
 
 # ==================== 核心配置 ====================
 # 1. 路径配置
-VIDEO_PATH = "/home/verse/Videos/phantom13.mp4"
+VIDEO_PATH = "/home/verse/Videos/phantom51.mp4"
 INIT_MODEL = "./model/ligthtrack_init.pt"
 UPDATE_MODEL = "./model/ligthtrack_update.pt"
 YOLO_ENGINE_PATH = "./model/yolov5s_GLAD_wzw.engine"
@@ -67,6 +68,12 @@ def main():
         print(f"👁️ 初始化 YOLO 检测器: {YOLO_ENGINE_PATH}...")
         if os.path.exists(YOLO_ENGINE_PATH):
             yolo_detector = YOLO_Detector(YOLO_ENGINE_PATH)
+            # ================= 【新增】YOLO 预热 =================
+            print("🔥 正在预热 YOLO...")
+            dummy_img = np.zeros((640, 640, 3), dtype=np.uint8)
+            yolo_detector.detect(dummy_img) # 跑一次空推理
+            print("✅ YOLO 预热完成")
+            # ===================================================
             print("✅ YOLO 加载成功")
         else:
             print(f"❌ 错误: 找不到 YOLO 引擎文件 -> {YOLO_ENGINE_PATH}")
@@ -82,10 +89,11 @@ def main():
     tracking_state = False # False=Searching, True=Tracking
     visual_fail_count = 0  # 记录 YOLO 连续失败次数
 
-    # FPS 统计
-    fps_start_time = time.time()
-    fps_frame_counter = 0
+    # === 修改：初始化实时 FPS 变量 ===
+    prev_frame_time = time.time()
     current_fps = 0.0
+    # ==============================
+
     print(f"\n✅ 系统启动. 当前配置: {ENABLE_CONFIG}")
 
     cv2.namedWindow("System Demo", cv2.WINDOW_NORMAL)
@@ -94,6 +102,19 @@ def main():
     while True:
         ret, curr_frame = cap.read()
         if not ret: break
+
+        # === 修改：计算实时 FPS (每一帧都算) ===
+        curr_time = time.time()
+        time_delta = curr_time - prev_frame_time
+        prev_frame_time = curr_time
+
+        if time_delta > 0:
+            instant_fps = 1.0 / time_delta
+            # 平滑滤波: 0.1 * 新值 + 0.9 * 旧值 (防止数值跳动剧烈)
+            current_fps = 0.1 * instant_fps + 0.9 * current_fps
+        else:
+            current_fps = 0.0
+        # ====================================
 
         frame_count += 1
         display_frame = curr_frame.copy()
@@ -170,7 +191,7 @@ def main():
             bbox, score = tracker.track(curr_frame)
 
             # 阈值判断 (丢帧检测)
-            if score < 0.98: # 或者 0.6，看你的 LightTrack 表现
+            if score <= 0.98: # 或者 0.6，看你的 LightTrack 表现
                 print(f"Frame {frame_count}: ⚠️ 追踪丢失 (Score: {score:.2f}) -> 切回搜索")
                 tracking_state = False # 切回搜索模式
                 visual_fail_count = 0  # 重置计数，给 YOLO 机会
@@ -186,22 +207,16 @@ def main():
 
         # --------------------------------------------
 
-        # FPS 计算
-        fps_frame_counter += 1
-        elapsed_time = time.time() - fps_start_time
-        if elapsed_time >= 0.5:
-            current_fps = fps_frame_counter / elapsed_time
-            fps_frame_counter = 0
-            fps_start_time = time.time()
-
         prev_frame = curr_frame.copy()
 
         # UI 绘制
         state_text = "TRACKING" if tracking_state else "SEARCHING"
         state_color = (0, 255, 255) if tracking_state else (0, 0, 255)
+        # 根据帧率高低改变颜色 (低于30变黄)
         fps_color = (0, 255, 0) if current_fps >= 30 else (0, 255, 255)
 
         cv2.putText(display_frame, f"Mode: {state_text}", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, state_color, 2)
+        # 实时 FPS 显示
         cv2.putText(display_frame, f"FPS: {current_fps:.1f}", (20, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.8, fps_color, 2)
 
         # 显示开关状态

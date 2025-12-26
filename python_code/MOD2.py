@@ -1,4 +1,3 @@
-# moving object detection using two frame differencing method
 import cv2
 import numpy as np
 from Functions import enlargebox

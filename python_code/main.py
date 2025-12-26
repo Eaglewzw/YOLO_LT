@@ -22,7 +22,7 @@ PLUGIN_LIBRARY = "./model/libmyplugins.so"
 DEVICE = 'cuda'
 
 # 3. 策略阈值
-VISUAL_FAIL_THRESHOLD = 120  # YOLO 连续失败多少帧后，降级为 MOD
+VISUAL_FAIL_THRESHOLD = 120
 
 # 4. 功能开关
 ENABLE_CONFIG = {

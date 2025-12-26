@@ -1,6 +1,6 @@
 # 🚀 Hybrid High-Performance Object Tracking System
 
-这是一个基于 **YOLOv5 (TensorRT)**、**LightTrack** 和 **MOD (运动目标检测)** 的混合目标跟踪系统。
+基于 **YOLOv5 (TensorRT)**、**LightTrack** 和 **MOD (运动目标检测)** 的混合目标检测跟踪系统。
 
 <div align="center">
   <img src="assets/result_.png" width="80%" alt="小目标无人机检测框架" />
@@ -12,11 +12,6 @@
 * **🛠️ 混合架构 (TBD)**:
     * **检测 (Detect)**: 结合 YOLOv5 (针对已知类别) 和 MOD (针对运动物体) 进行全局搜索。
     * **跟踪 (Track)**: 使用 LightTrack 进行高帧率、高精度的单目标持续跟踪。
-* **🧠 智能分帧策略 (Split-Frame Strategy)**:
-    * **零卡顿切换**: 采用独创的“分帧初始化”逻辑，将耗时的跟踪器初始化操作分摊到两帧处理，彻底消除了从“检测”切换到“跟踪”时的瞬间掉帧现象。
-* **🛡️ 鲁棒的 CUDA 上下文管理**:
-    * 彻底解决了 PyCUDA (TensorRT) 与 PyTorch (LightTrack) 之间的 CUDA Context 冲突问题，确保多模型混合推理时的稳定性。
-
 ## 🏗️ 系统架构
 
 <div align="center">

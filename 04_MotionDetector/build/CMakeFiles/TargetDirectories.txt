@@ -1,3 +1,0 @@
-/home/verse/C_plus_plus/Graduation_Code/Light_DT/04_MotionDetector/build/CMakeFiles/MotionDetector.dir
-/home/verse/C_plus_plus/Graduation_Code/Light_DT/04_MotionDetector/build/CMakeFiles/edit_cache.dir
-/home/verse/C_plus_plus/Graduation_Code/Light_DT/04_MotionDetector/build/CMakeFiles/rebuild_cache.dir

@@ -29,6 +29,8 @@ class LightTrackEngine:
         self.p.window_influence = 0.225
         self.p.lr = 0.616
         self.p.windowing = 'cosine'
+        self.last_cls_score_pos = 170
+        self.abnormal_jump_value = 25
 
         # 2. 初始化 tracker helper
         class DummyInfo:
@@ -134,6 +136,7 @@ class LightTrackEngine:
         x, y, w, h = bbox
         self.target_pos = np.array([x + w / 2, y + h / 2])
         self.target_sz = np.array([w, h])
+        self.last_cls_score_pos = 170
 
         # 计算搜索尺寸 (s_z)
         wc_z = self.target_sz[0] + self.p.context_amount * (self.target_sz[0] + self.target_sz[1])
@@ -164,6 +167,28 @@ class LightTrackEngine:
         self.window = np.outer(hanning, hanning)
 
         # print("✅ [Engine] 追踪器初始化完成 (GPU Accel)")
+
+    def _check_pos_change(self, current_pos_idx):
+        """
+        检查目标在特征图上的位置是否发生剧烈跳变
+        :param current_pos_idx: 当前帧最高分位置的索引 (flat index 0~323)
+        :return: True 表示发生异常跳变，False 表示正常
+        """
+        is_change_flag = False
+
+        # 计算位移偏差
+        delta = abs(current_pos_idx - self.last_cls_score_pos)
+
+        # C++ 逻辑: if(abs(...) <= 25)
+        if delta <= self.abnormal_jump_value:
+            is_change_flag = False
+            self.last_cls_score_pos = current_pos_idx # 更新上一帧位置
+        else:
+            is_change_flag = True
+            self.last_cls_score_pos = 170 # 发生跳变，重置为中心点 (Reset Logic)
+            # print(f"⚠️ [Anti-Drift] 检测到剧烈跳动! Delta: {delta} -> 判定为不可靠")
+
+        return is_change_flag
 
     def track(self, frame):
         """
@@ -197,6 +222,20 @@ class LightTrackEngine:
 
         pred_bbox = self._post_process(bbox_pred, cls_score, scale_z, frame.shape)
         best_score = cls_score[np.unravel_index(np.argmax(cls_score), cls_score.shape)]
+
+        # ==========================================
+        # 获取最高分位置并进行跳变检测
+        # ==========================================
+        # 1. 获取 flatten 后的最大值索引 (对应 C++ cls_score_position)
+        best_idx_flat = np.argmax(cls_score)
+        # 2. 获取最高分数值
+        best_score = cls_score.flat[best_idx_flat]
+        # 3. 调用防漂移检测
+        is_abnormal_jump = self._check_pos_change(best_idx_flat)
+
+        # 4. 如果检测到异常跳动，强制将分数置为 0，触发出界的 LOST 逻辑
+        if is_abnormal_jump:
+            best_score = 0.0 # 强制认为丢失
 
         final_bbox = (
             int(self.target_pos[0] - self.target_sz[0] / 2),
@@ -270,7 +309,7 @@ class LightTrackEngine:
 
 
 # ==================== 主函数 ====================
-VIDEO_PATH = "/home/verse/Videos/phantom13.mp4"
+VIDEO_PATH = "/home/verse/Videos/DJI_0010.mp4"
 INIT_MODEL = "./model/ligthtrack_init.pt"
 UPDATE_MODEL = "./model/ligthtrack_update.pt"
 # 实例化 tracker

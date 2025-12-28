@@ -14,7 +14,7 @@ from YOLO_Engine import YOLO_Detector
 
 # ==================== 核心配置 ====================
 # 1. 路径配置
-VIDEO_PATH = "/home/verse/Videos/phantom13.mp4"
+VIDEO_PATH = "/home/verse/Videos/DJI_0010.mp4"
 INIT_MODEL = "./model/ligthtrack_init.pt"
 UPDATE_MODEL = "./model/ligthtrack_update.pt"
 YOLO_ENGINE_PATH = "./model/DT_Drone.engine"
@@ -24,17 +24,17 @@ PLUGIN_LIBRARY = "./model/libmyplugins.so"
 DEVICE = 'cuda'
 
 # 3. 策略阈值
-VISUAL_FAIL_THRESHOLD = 120  # YOLO 连续失败多少次切换到 MOD
-MOTION_FAIL_THRESHOLD = 120  # MOD 连续失败多少次切回 YOLO
+VISUAL_FAIL_THRESHOLD = 30  # YOLO 连续失败多少次切换到 MOD
+MOTION_FAIL_THRESHOLD = 60  # MOD 连续失败多少次切回 YOLO
 
-# 4. LightTrack 参数 (用于反算搜索框，必须与 Engine 内部一致)
+# 4. LightTrack 参数 (用于反算搜索框，与 Engine 内部一致)
 LT_INSTANCE_SIZE = 288    # 搜索图像大小 (288 or 255)
 LT_EXEMPLAR_SIZE = 127    # 模板图像大小
 LT_CONTEXT_AMOUNT = 0.5   # 上下文比例
 
 # 5. 功能开关
 ENABLE_CONFIG = {
-    "VISUAL_DETECT": False,  # 是否开启 YOLO 视觉检测
+    "VISUAL_DETECT": True,  # 是否开启 YOLO 视觉检测
     "MOTION_DETECT": True,  # 是否开启 MOD2 运动检测
     "TRACKING": True,       # 是否开启 LightTrack 局部跟踪
 }
@@ -239,7 +239,7 @@ def main():
             cv2.putText(display_frame, "Search Area", (sx, sy - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
             # 3. 结果判断
-            if score < 0.98:
+            if score <= 0.99:
                 print(f"Frame {frame_count}: ⚠️ 追踪丢失 (Score: {score:.2f}) -> 切回搜索")
                 tracking_state = False
 

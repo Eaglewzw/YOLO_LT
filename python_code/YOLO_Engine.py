@@ -179,8 +179,9 @@ class YOLO_Detector:
 
 def main():
     # ================= 配置 =================
-    engine_path = "./model/yolov5s_GLAD_wzw.engine"
-    video_path = "/home/verse/Videos/phantom13.mp4"
+    # engine_path = "./model/yolov5s_GLAD_wzw.engine"
+    engine_path = "./model/DT_Drone.engine"
+    video_path = "/home/verse/Videos/fast_drone.mp4"
     # =======================================
 
     detector = YOLO_Detector(engine_path)

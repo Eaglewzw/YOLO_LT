@@ -144,7 +144,7 @@ def MOD2_global(frame1, frame2):
 def main():
     # ---------------- 配置区域 ----------------
     # video_input = 0
-    video_input = "/home/verse/Videos/2.mp4"
+    video_input = "/home/verse/Videos/phantom13.mp4"
 
     save_video = True
     # -----------------------------------------

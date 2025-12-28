@@ -13,10 +13,10 @@ from YOLO_Engine import YOLO_Detector
 
 # ==================== 核心配置 ====================
 # 1. 路径配置
-VIDEO_PATH = "/home/verse/Videos/phantom51.mp4"
+VIDEO_PATH = "/home/verse/Videos/dji_0012.mp4"
 INIT_MODEL = "./model/ligthtrack_init.pt"
 UPDATE_MODEL = "./model/ligthtrack_update.pt"
-YOLO_ENGINE_PATH = "./model/yolov5s_GLAD_wzw.engine"
+YOLO_ENGINE_PATH = "./model/DT_Drone.engine"
 PLUGIN_LIBRARY = "./model/libmyplugins.so"
 
 # 2. 设备配置

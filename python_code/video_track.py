@@ -10,7 +10,7 @@ from lib.tracker.lighttrack import Lighttrack
 from lib.utils.utils import get_subwindow_tracking
 
 # ==================== Configuration ====================
-VIDEO_PATH = "/home/verse/Videos/DJI_0010.mp4"
+VIDEO_PATH = "/home/verse/Videos/phantom13.mp4"
 OUTPUT_PATH = "./output_tracked.mp4"
 
 INIT_MODEL_PATH = "./model/ligthtrack_init.pt"    # 你的 init 模型

@@ -13,7 +13,7 @@ import tensorrt as trt
 import pycuda.driver as cuda
 
 # 加载自定义插件 (如果存在)
-PLUGIN_LIBRARY = "./model/libmyplugins.so"
+PLUGIN_LIBRARY = "./model/TensorRT_8/libmyplugins.so"
 if os.path.exists(PLUGIN_LIBRARY):
     ctypes.CDLL(PLUGIN_LIBRARY)
 else:
@@ -179,9 +179,8 @@ class YOLO_Detector:
 
 def main():
     # ================= 配置 =================
-    # engine_path = "./model/yolov5s_GLAD_wzw.engine"
-    engine_path = "./model/DT_Drone.engine"
-    video_path = "/home/verse/Videos/fast_drone.mp4"
+    engine_path = "./model/yolov5s_GLAD_wzw.engine"
+    video_path = "/home/verse/Videos/phantom13.mp4"
     # =======================================
 
     detector = YOLO_Detector(engine_path)

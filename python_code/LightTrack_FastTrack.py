@@ -136,7 +136,6 @@ class LightTrackEngine:
         x, y, w, h = bbox
         self.target_pos = np.array([x + w / 2, y + h / 2])
         self.target_sz = np.array([w, h])
-        self.last_cls_score_pos = 170
 
         # 计算搜索尺寸 (s_z)
         wc_z = self.target_sz[0] + self.p.context_amount * (self.target_sz[0] + self.target_sz[1])
@@ -167,6 +166,7 @@ class LightTrackEngine:
         self.window = np.outer(hanning, hanning)
 
         # print("✅ [Engine] 追踪器初始化完成 (GPU Accel)")
+
 
     def _check_pos_change(self, current_pos_idx):
         """
@@ -309,7 +309,7 @@ class LightTrackEngine:
 
 
 # ==================== 主函数 ====================
-VIDEO_PATH = "/home/verse/Videos/DJI_0010.mp4"
+VIDEO_PATH = "/home/verser/Videos/fast_drone.mp4"
 INIT_MODEL = "./model/ligthtrack_init.pt"
 UPDATE_MODEL = "./model/ligthtrack_update.pt"
 # 实例化 tracker
@@ -404,7 +404,7 @@ def main():
             score_text = f"{current_score:.2f}"
 
             # 丢帧检测
-            if current_score <= 0.5:
+            if current_score < 0.98:
                 print(f"🛑 追踪丢失 (Score: {current_score:.4f}) <= 0.5，程序退出。")
                 cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 3)
                 cv2.putText(frame, f"LOST: {current_score:.3f}", (x, y - 10),

@@ -8,7 +8,7 @@ from pathlib import Path
 # --- 1. 路径设置 ---
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]
-YOLOv5_ROOT = ROOT / 'yolov5_v6'
+YOLOv5_ROOT = ROOT / 'yolov5'
 
 if str(YOLOv5_ROOT) not in sys.path:
     sys.path.insert(0, str(YOLOv5_ROOT))
@@ -115,7 +115,7 @@ def run_legacy_inference(weights, source=0, conf_thres=0.5, device=''):
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    my_model = "./model/best.pt"
+    my_model = "./model/TensorRT_10/yolov5s_GLAD.pt"
     # 这里使用了你指定的视频路径
     VIDEO_PATH = "/home/verse/Videos/phantom13.mp4"
 

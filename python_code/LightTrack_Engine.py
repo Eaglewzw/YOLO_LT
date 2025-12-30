@@ -270,9 +270,9 @@ class LightTrackEngine:
 
 
 # ==================== 主函数 ====================
-VIDEO_PATH = "/home/verse/Videos/phantom13.mp4"
-INIT_MODEL = "./model/ligthtrack_init.pt"
-UPDATE_MODEL = "./model/ligthtrack_update.pt"
+VIDEO_PATH = "/home/verser/Videos/fast_drone.mp4"
+INIT_MODEL = "./model/TensorRT_10/ligthtrack_init.pt"
+UPDATE_MODEL = "./model/TensorRT_10/ligthtrack_update.pt"
 # 实例化 tracker
 tracker = LightTrackEngine(INIT_MODEL, UPDATE_MODEL, device="cuda:0")
 

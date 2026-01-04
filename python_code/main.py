@@ -8,7 +8,7 @@ import ctypes
 
 
 # ================= 配置开关 =================
-USE_TENSORRT_10 = False  # True: 使用 TRT10, False: 使用 TRT8.6
+USE_TENSORRT_10 = True  # True: 使用 TRT10, False: 使用 TRT8.6
 # ===========================================
 INIT_MODEL = "./model/ligthtrack_init.pt"
 UPDATE_MODEL = "./model/ligthtrack_update.pt"
@@ -43,7 +43,7 @@ else:
         print(f"⚠️ 警告: 找不到插件库 {PLUGIN_LIBRARY}")
 
 # ==================== 2. 核心配置 ====================
-VIDEO_PATH = "/home/verse/Videos/phantom13.mp4"
+VIDEO_PATH = "/home/verser/Videos/phantom13.mp4"
 DEVICE = 'cuda'
 
 # --- 策略阈值 (新增) ---

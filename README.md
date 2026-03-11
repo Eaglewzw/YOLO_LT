@@ -2,8 +2,17 @@
 
 基于 **YOLOv5 (TensorRT)**、**LightTrack** 和 **MOD (运动目标检测)** 的混合目标检测跟踪系统。
 
+[//]: # (<div align="center">)
+
+[//]: # (  <img src="assets/result_.png" width="80%" alt="小目标无人机检测框架" />)
+
+[//]: # (</div>)
+
 <div align="center">
-  <img src="assets/result_.png" width="80%" alt="小目标无人机检测框架" />
+  <a href="assets/result.mp4.mp4">
+    <img src="assets/result_.png" width="80%" alt="点击观看视频">
+  </a>
+  <p>👆 点击图片播放视频</p>
 </div>
 
 ## ✨ 核心特性
@@ -15,7 +24,7 @@
 ## 🏗️ 系统架构
 
 <div align="center">
-  <img src="assets/小目标无人机检测框架.jpg" width="80%" alt="小目标无人机检测框架" />
+  <img src="assets/小目标无人机检测框架.png" width="80%" alt="小目标无人机检测框架" />
 </div>
 
 系统采用有限状态机 (FSM) 进行调度：

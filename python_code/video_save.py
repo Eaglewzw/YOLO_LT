@@ -259,7 +259,7 @@ def main():
             config_str = f"V:{int(ENABLE_CONFIG['VISUAL_DETECT'])} M:{int(ENABLE_CONFIG['MOTION_DETECT'])} T:{int(ENABLE_CONFIG['TRACKING'])}"
             cv2.putText(display_frame, config_str, (20, 160), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (254, 0, 0), 1)
 
-            # ==================== 【新增】写入视频帧 ====================
+            # ==================== 写入视频帧 ====================
             if video_writer is not None:
                 video_writer.write(display_frame)
             # ========================================================
@@ -269,7 +269,7 @@ def main():
                 break
 
     finally:
-        # ==================== 【新增】释放资源 ====================
+        # ==================== 释放资源 ====================
         if video_writer is not None:
             video_writer.release()
             print("\n 视频保存完成。")

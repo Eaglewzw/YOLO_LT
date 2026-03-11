@@ -1,0 +1,61 @@
+# YOLOv5 �� by Ultralytics, GPL-3.0 license
+
+# Parameters
+nc: 80  # number of classes
+depth_multiple: 0.33  # model depth multiple
+width_multiple: 0.50  # layer channel multiple
+anchors:
+  # ⚠️ 新增第一行 Anchors 用于 P2 层 (极小目标)
+  - [5,6, 8,14, 15,11]  # P2/4 (New)
+  - [16, 21, 18, 24, 21, 21]  # P3/8
+  - [22, 26, 24, 31, 26, 22]  # P4/16
+  - [30, 28, 36, 33, 40, 43]  # P5/32
+
+# YOLOv5 v6.0 backbone
+backbone:
+  # [from, number, module, args]
+  [[-1, 1, Conv, [64, 6, 2, 2]],  # 0-P1/2
+   [-1, 1, Conv, [128, 3, 2]],  # 1-P2/4
+   [-1, 3, C3, [128]],          # 2 (P2/4 Feature Map - 128 ch)
+   [-1, 1, Conv, [256, 3, 2]],  # 3-P3/8
+   [-1, 6, C3, [256]],          # 4 (P3/8 Feature Map - 256 ch)
+   [-1, 1, Conv, [512, 3, 2]],  # 5-P4/16
+   [-1, 9, C3, [512]],          # 6 (P4/16 Feature Map - 512 ch)
+   [-1, 1, Conv, [1024, 3, 2]], # 7-P5/32
+   [-1, 3, C3, [1024]],         # 8 (P5/32 Feature Map - 1024 ch)
+   [-1, 1, SPPF, [1024, 5]],    # 9
+  ]
+
+# YOLOv5 v6.0 head
+head:
+  [[-1, 1, Conv, [512, 1, 1]],
+   [-1, 1, nn.Upsample, [None, 2, 'nearest']],
+   [[-1, 6], 1, Concat, [1]],  # cat backbone P4
+   [-1, 3, C3, [512, False]],  # 13
+
+   [-1, 1, Conv, [256, 1, 1]],
+   [-1, 1, nn.Upsample, [None, 2, 'nearest']],
+   [[-1, 4], 1, Concat, [1]],  # cat backbone P3
+   [-1, 3, C3, [256, False]],  # 17 (P3/8-small)
+
+   # ============ 新增 P2 分支开始 ============
+   [-1, 1, Conv, [128, 1, 1]], # 18
+   [-1, 1, nn.Upsample, [None, 2, 'nearest']], # 19
+   [[-1, 2], 1, Concat, [1]],  # 20 cat backbone P2 (Layer 2)
+   [-1, 3, C3, [128, False]],  # 21 (P2/4-tiny) -> 第1个输出头
+   # ============ 新增 P2 分支结束 ============
+
+   [-1, 1, Conv, [128, 3, 2]], # 22 (Downsample P2 -> P3)
+   [[-1, 18], 1, Concat, [1]], # 23 cat head P3 (Layer 18 conv output)
+   [-1, 3, C3, [256, False]],  # 24 (P3/8-small) -> 第2个输出头
+
+   [-1, 1, Conv, [256, 3, 2]], # 25 (Downsample P3 -> P4)
+   [[-1, 14], 1, Concat, [1]], # 26 cat head P4 (Layer 14 conv output)
+   [-1, 3, C3, [512, False]],  # 27 (P4/16-medium) -> 第3个输出头
+
+   [-1, 1, Conv, [512, 3, 2]], # 28 (Downsample P4 -> P5)
+   [[-1, 10], 1, Concat, [1]], # 29 cat head P5 (Layer 10 conv output)
+   [-1, 3, C3, [1024, False]], # 30 (P5/32-large) -> 第4个输出头
+
+   [[21, 24, 27, 30], 1, Detect, [nc, anchors]], # Detect(P2, P3, P4, P5)
+  ]

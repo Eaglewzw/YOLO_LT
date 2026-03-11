@@ -10,7 +10,7 @@ set(CMAKE_BUILD_TYPE Debug)
 
 
 if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-    set(CMAKE_CUDA_ARCHITECTURES 70 75 80)
+    set(CMAKE_CUDA_ARCHITECTURES 80 85 90)
 endif(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
 
 
@@ -25,15 +25,14 @@ include_directories(/usr/local/cuda/include)
 link_directories(/usr/local/cuda/lib64)
 # tensorrt
 # TODO(Call for PR): make TRT path configurable from command line
-include_directories(/opt/TensorRT-8.6/include/)
-link_directories(/opt/TensorRT-8.6/lib/)
+include_directories(/opt/TensorRT/include/)
+link_directories(/opt/TensorRT/lib/)
 
 link_directories(${PROJECT_SOURCE_DIR}/lib/)
 
 include_directories(${PROJECT_SOURCE_DIR}/src/)
 include_directories(${PROJECT_SOURCE_DIR}/plugin/)
 include_directories(${PROJECT_SOURCE_DIR}/include/)
-include_directories(${PROJECT_SOURCE_DIR}/include/ncnn/)
 include_directories(${PROJECT_SOURCE_DIR}/include/MotionDetector/)
 include_directories(${PROJECT_SOURCE_DIR}/include/Kalman/)
 file(GLOB_RECURSE SRCS ${PROJECT_SOURCE_DIR}/src/*.cpp ${PROJECT_SOURCE_DIR}/src/*.cu)
@@ -41,7 +40,7 @@ file(GLOB_RECURSE SRCS ${PROJECT_SOURCE_DIR}/src/*.cpp ${PROJECT_SOURCE_DIR}/src
 
 
 
-find_package(OpenCV 4.6.0)
+find_package(OpenCV)
 include_directories(${OpenCV_INCLUDE_DIRS})
 #打印 OpenCV 的一些变量值
 message(STATUS "OpenCV version: ${OpenCV_VERSION}")

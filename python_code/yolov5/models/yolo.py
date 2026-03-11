@@ -263,7 +263,7 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
 
         n = n_ = max(round(n * gd), 1) if n > 1 else n  # depth gain
         if m in [Conv, GhostConv, Bottleneck, GhostBottleneck, SPP, SPPF, DWConv, MixConv2d, Focus, CrossConv,
-                 BottleneckCSP, C3, C3TR, C3SPP, C3Ghost]:
+                 BottleneckCSP, C3, C3TR, C3SPP, C3Ghost, GSConv, VoVGSCSP, LSKBlock]:
             c1, c2 = ch[f], args[0]
             if c2 != no:  # if not output
                 c2 = make_divisible(c2 * gw, 8)
@@ -272,6 +272,24 @@ def parse_model(d, ch):  # model_dict, input_channels(3)
             if m in [BottleneckCSP, C3, C3TR, C3Ghost]:
                 args.insert(2, n)  # number of repeats
                 n = 1
+
+        # ============ 插入 LSNet 支持 (开始) ============
+        elif m is LSNetBackbone:
+            # 1. 实例化这个模块 (例如: m_ = LSNetBackbone('t'))
+            # args 里的内容就是 yaml 里的参数，比如 ['t']
+            m_ = m(*args)
+
+            # 2. 直接读取我们在 common.py 里写好的 self.channel
+            # 这样无论 common.py 怎么改，这里永远是对的
+            c2 = m_.channel
+
+        elif m is IndexSelect:
+            # IndexSelect 负责从上层输出的列表 [p3, p4, p5] 中取出一个
+            c1 = ch[f]  # c1 此时是一个列表，例如 [64, 128, 256]
+            index = args[0]  # yaml 里写的参数，例如 0, 1, 或 2
+            c2 = c1[index]  # 取出具体的通道数
+        # ============ 插入 LSNet 支持 (结束) ============
+
         elif m is nn.BatchNorm2d:
             args = [ch[f]]
         elif m is Concat:

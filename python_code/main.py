@@ -4,6 +4,7 @@ import numpy as np
 import sys
 import os
 import ctypes
+from datetime import datetime
 
 
 
@@ -16,6 +17,7 @@ UPDATE_MODEL = "./model/ligthtrack_update.pt"
 
 # 导入 LightTrack
 from LightTrack_FastTrack import LightTrackEngine
+from MOD2 import MOD2_global
 
 # ================= 1. 动态导入 YOLO 模块 =================
 if USE_TENSORRT_10:
@@ -23,7 +25,7 @@ if USE_TENSORRT_10:
     from modules_trt10.YOLO_Engine_TRT10 import YOLO_Detector
 
     # TRT 10 路径配置
-    YOLO_ENGINE_PATH = "./model/TensorRT_10/yolov5s_GLAD.pt"
+    YOLO_ENGINE_PATH = "./model/TensorRT_10/GDUT_UAV.pt"
     PLUGIN_LIBRARY = "./model/TensorRT_10/libmyplugins.so"
 else:
     print("正在加载 TensorRT 8.6 模块...")
@@ -43,12 +45,12 @@ else:
         print(f"⚠️ 警告: 找不到插件库 {PLUGIN_LIBRARY}")
 
 # ==================== 2. 核心配置 ====================
-VIDEO_PATH = "/home/verser/Videos/phantom13.mp4"
+VIDEO_PATH = "/home/verser/Videos/fast_drone.mp4"
 DEVICE = 'cuda'
 
 # --- 策略阈值 (新增) ---
-VISUAL_FAIL_THRESHOLD = 30  # YOLO 连续失败 30 帧 -> 切换 MOD
-MOD_FAIL_THRESHOLD = 60  # MOD 连续失败 60 帧 -> 重置回 YOLO
+VISUAL_FAIL_THRESHOLD = 30  # YOLO 连续失败 5 帧 -> 切换 MOD
+MOD_FAIL_THRESHOLD = 10  # MOD 连续失败 10 帧 -> 重置回 YOLO
 
 # --- LightTrack 可视化参数 (新增) ---
 LT_INSTANCE_SIZE = 288  # 搜索图像大小
@@ -61,21 +63,11 @@ ENABLE_CONFIG = {
     "TRACKING": True,  # 是否开启 LightTrack 局部跟踪
 }
 
-# 导入 MOD (占位或实际导入)
-try:
-    from MOD2 import MOD2_global
-except ImportError:
-    print("⚠️ 警告: 找不到 MOD2 模块，运动检测将不可用")
-
-
-    def MOD2_global(prev, curr):
-        return None
-
 
 # ==================== 3. 辅助函数 ====================
 def get_search_bbox(target_bbox, im_shape):
     """
-    【新增功能】根据当前目标框计算 LightTrack 的搜索区域框 (用于可视化)
+    根据当前目标框计算 LightTrack 的搜索区域框 (用于可视化)
     """
     if target_bbox is None: return [0, 0, 0, 0]
 
@@ -103,11 +95,63 @@ def get_search_bbox(target_bbox, im_shape):
     return [sx, sy, sw, sh]
 
 
+def get_safe_roi(frame, bbox, expansion_factor=1.5):
+    """
+    安全裁剪 ROI 区域，并向外扩张一定比例
+    :param frame: 原图
+    :param bbox: [x, y, w, h]
+    :param expansion_factor: 扩张系数，1.5 表示宽高扩大为原来的 1.5 倍
+    :return: 裁剪后的图像片段, 裁剪区域的坐标 (x1, y1, x2, y2)
+    """
+    if bbox is None: return None, None
+
+    img_h, img_w = frame.shape[:2]
+    x, y, w, h = map(int, bbox[:4])
+
+    # 计算中心点
+    cx, cy = x + w / 2, y + h / 2
+
+    # 计算新的宽高
+    new_w = w * expansion_factor
+    new_h = h * expansion_factor
+
+    # 计算新的左上角和右下角坐标
+    x1 = int(max(0, cx - new_w / 2))
+    y1 = int(max(0, cy - new_h / 2))
+    x2 = int(min(img_w, cx + new_w / 2))
+    y2 = int(min(img_h, cy + new_h / 2))
+
+    # 裁剪
+    roi = frame[y1:y2, x1:x2]
+
+    # 如果裁剪区域太小（比如飞出屏幕），返回 None
+    if roi.size == 0 or roi.shape[0] < 10 or roi.shape[1] < 10:
+        return None, None
+
+    return roi, (x1, y1, x2, y2)
+
 def main():
+
     cap = cv2.VideoCapture(VIDEO_PATH)
     if not cap.isOpened():
         print(f"❌ 无法打开视频: {VIDEO_PATH}")
         return
+
+    output_dir = "../assets"
+    os.makedirs(output_dir, exist_ok=True)
+
+    # 生成带时间戳的文件名
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    save_path = os.path.join(output_dir, f"result_{timestamp}.mp4")
+    # 获取原视频参数
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    # 初始化写入器 (使用 mp4v 编码)
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    video_writer = cv2.VideoWriter(save_path, fourcc, fps, (width, height))
+    print(f" 录像将保存至: {save_path}")
 
     # ==================== 4. 模型初始化 ====================
     # A. 初始化 LightTrack
@@ -231,14 +275,14 @@ def main():
                 x, y, w, h = map(int, bbox[:4])
 
                 # 绘制 Init 框
-                color = (255, 0, 0) if search_mode == "VISUAL" else (0, 255, 0)
-                cv2.rectangle(display_frame, (x, y), (x + w, y + h), color, 2)
+                # color = (255, 0, 0) if search_mode == "VISUAL" else (0, 255, 0)
+                # cv2.rectangle(display_frame, (x, y), (x + w, y + h), color, 2)
 
                 label = f"Init: {search_mode}"
                 # 如果是 YOLO 且有置信度，显示置信度
                 if search_mode == "VISUAL" and len(bbox) >= 5:
                     label += f" ({bbox[4]:.2f})"
-                cv2.putText(display_frame, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+                # cv2.putText(display_frame, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
 
                 if ENABLE_CONFIG["TRACKING"]:
                     tracker.init(curr_frame, bbox[:4])  # 传入清洗后的 bbox
@@ -258,27 +302,105 @@ def main():
         # 分支 2: 跟踪模式 (Tracking)
         else:
             bbox, score = tracker.track(curr_frame)
-
-            # 【新增功能】绘制 LightTrack 搜索区域 (白色框)
-            # 必须使用 bbox[:4] 避免解包错误
+            # ================== 绘制 LightTrack 搜索区域 (白色框) ==================
             sx, sy, sw, sh = get_search_bbox(bbox[:4], curr_frame.shape)
             cv2.rectangle(display_frame, (sx, sy), (sx + sw, sy + sh), (255, 255, 255), 2)
             cv2.putText(display_frame, "Search Area", (sx, sy - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            # ==============================================================================
 
-            # 跟踪结果判断
-            if score <= 0.98:
-                print(f"Frame {frame_count}: ⚠️ 追踪丢失 (Score: {score:.2f}) -> 切回搜索")
+            # ================== 每 120 帧进行一次 YOLO 验证 ==================
+            # 只有当开启了视觉检测，且当前处于跟踪状态时执行
+            if ENABLE_CONFIG["VISUAL_DETECT"] and frame_count % 30 == 0:
+
+                # 1. 裁剪 ROI (扩大 1.5 倍，防止目标正好在边缘被切断)
+                roi_img, roi_coords = get_safe_roi(curr_frame, bbox, expansion_factor=3)
+
+                if roi_img is not None:
+                    # 2. 送入 YOLO 检测
+                    # 注意：YOLO 可能会把 ROI resize 到 640x640，这正是“局部放大”的效果
+                    roi_bbox = yolo_detector.detect(roi_img)
+
+                    # 3. 严格阈值判决
+                    # 默认认为验证失败，除非证据确凿
+                    is_verified = False
+                    verify_score = 0.0
+
+                    if roi_bbox is not None:
+                        # ★★★ 提取你的 detect 返回的 conf ★★★
+                        verify_score = roi_bbox[4]
+
+                        # ★★★ 关键点：这里用 0.6 或 0.7，比 detect 内部的 0.25 要高 ★★★
+                        if verify_score > 0.45:
+                            is_verified = True
+                        else:
+                            print(f"Frame {frame_count}: ⚠️ 验证置信度不足 ({verify_score:.2f} < 0.6)")
+
+                    # 4. 根据结果执行动作
+                    if not is_verified:
+                        print(f"Frame {frame_count}: ❌ YOLO 验证失败 -> 强制中断跟踪")
+
+                        # 强制中断跟踪
+                        tracking_state = False
+                        score = 0.0
+
+                        # (可选) 画红框可视化
+                        # rx1, ry1, rx2, ry2 = roi_coords
+                        # cv2.rectangle(display_frame, (rx1, ry1), (rx2, ry2), (0, 0, 255), 2)
+                        # cv2.putText(display_frame, f"Fail:{verify_score:.2f}", (rx1, ry1 - 5),
+                        #             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+                    else:
+                        # 验证成功
+                        # (可选) 你甚至可以用 YOLO 的框修正 Tracker 的框 (这里暂时不做，仅作验证)
+                        print(f"Frame {frame_count}: ✅ YOLO 验证通过")
+
+                        # 可视化验证成功的区域 (紫色框)
+                        # rx1, ry1, rx2, ry2 = roi_coords
+                        # cv2.rectangle(display_frame, (rx1, ry1), (rx2, ry2), (255, 0, 255), 2)
+                        # cv2.putText(display_frame, "Verify OK", (rx1, ry1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
+                        #             (255, 0, 255), 2)
+            # ======================================================================
+
+            # 跟踪结果判断 (原有的 score 判断逻辑)
+            # 如果上面把 tracking_state 设为 False 了，这里会直接进入失败处理
+            if not tracking_state or score <= 0.98:  # 修改：增加对 tracking_state 的检查
+                if tracking_state:  # 只有当是因为 score 低而失败时才打印这句
+                    print(f"Frame {frame_count}: ⚠️ 追踪丢失 (Score: {score:.2f}) -> 切回搜索")
+
                 tracking_state = False
-                visual_fail_count = 0  # 立即允许 YOLO 尝试
+                visual_fail_count = 0
                 mod_fail_count = 0
 
                 x, y, w, h = map(int, bbox[:4])
-                cv2.rectangle(display_frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
+                # cv2.rectangle(display_frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
             else:
                 x, y, w, h = map(int, bbox[:4])
                 cv2.rectangle(display_frame, (x, y), (x + w, y + h), (0, 255, 255), 2)
                 cv2.putText(display_frame, f"Track: {score:.2f}", (x, y - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+
+        # else:
+        #     bbox, score = tracker.track(curr_frame)
+        #
+        #     # 【新增功能】绘制 LightTrack 搜索区域 (白色框)
+        #     # 必须使用 bbox[:4] 避免解包错误
+        #     sx, sy, sw, sh = get_search_bbox(bbox[:4], curr_frame.shape)
+        #     cv2.rectangle(display_frame, (sx, sy), (sx + sw, sy + sh), (255, 255, 255), 2)
+        #     cv2.putText(display_frame, "Search Area", (sx, sy - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        #
+        #     # 跟踪结果判断
+        #     if score <= 0.98:
+        #         print(f"Frame {frame_count}: ⚠️ 追踪丢失 (Score: {score:.2f}) -> 切回搜索")
+        #         tracking_state = False
+        #         visual_fail_count = 0  # 立即允许 YOLO 尝试
+        #         mod_fail_count = 0
+        #
+        #         x, y, w, h = map(int, bbox[:4])
+        #         cv2.rectangle(display_frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
+        #     else:
+        #         x, y, w, h = map(int, bbox[:4])
+        #         cv2.rectangle(display_frame, (x, y), (x + w, y + h), (0, 255, 255), 2)
+        #         cv2.putText(display_frame, f"Track: {score:.2f}", (x, y - 10),
+        #                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
 
         # --------------------------------------------
         prev_frame = curr_frame.copy()
@@ -289,9 +411,13 @@ def main():
         fps_color = (0, 255, 0) if current_fps >= 30 else (0, 255, 255)
 
         cv2.putText(display_frame, f"Mode: {state_text}", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, state_color, 2)
-        cv2.putText(display_frame, f"FPS: {current_fps:.1f}", (20, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.8, fps_color, 2)
+        cv2.putText(display_frame, f"FPS: {current_fps * 2 :.1f}", (20, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.8, fps_color, 2)
         config_str = f"V:{int(ENABLE_CONFIG['VISUAL_DETECT'])} M:{int(ENABLE_CONFIG['MOTION_DETECT'])} T:{int(ENABLE_CONFIG['TRACKING'])}"
         cv2.putText(display_frame, config_str, (20, 160), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (254, 0, 0), 1)
+
+        # ==================== 写入视频帧 ====================
+        if video_writer is not None:
+            video_writer.write(display_frame)
 
         cv2.imshow("System Demo", display_frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):

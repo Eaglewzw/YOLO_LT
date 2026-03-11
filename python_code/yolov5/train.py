@@ -113,7 +113,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     if pretrained:
         with torch_distributed_zero_first(LOCAL_RANK):
             weights = attempt_download(weights)  # download if not found locally
-        ckpt = torch.load(weights, map_location=device)  # load checkpoint
+        ckpt = torch.load(weights, map_location=device, weights_only=False)  # load checkpoint
         model = Model(cfg or ckpt['model'].yaml, ch=3, nc=nc, anchors=hyp.get('anchors')).to(device)  # create
         exclude = ['anchor'] if (cfg or hyp.get('anchors')) and not resume else []  # exclude keys
         csd = ckpt['model'].float().state_dict()  # checkpoint state_dict as FP32
@@ -434,11 +434,11 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 def parse_opt(known=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default=ROOT / 'yolov5s.pt', help='initial weights path')
-    parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
-    parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='dataset.yaml path')
+    parser.add_argument('--cfg', type=str, default='models/yolov5s.yaml', help='model.yaml path')
+    parser.add_argument('--data', type=str, default=ROOT / 'data/GDUT_Drone.yaml', help='dataset.yaml path')
     parser.add_argument('--hyp', type=str, default=ROOT / 'data/hyps/hyp.scratch.yaml', help='hyperparameters path')
-    parser.add_argument('--epochs', type=int, default=300)
-    parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
+    parser.add_argument('--epochs', type=int, default=500)
+    parser.add_argument('--batch-size', type=int, default=64, help='total batch size for all GPUs')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='train, val image size (pixels)')
     parser.add_argument('--rect', action='store_true', help='rectangular training')
     parser.add_argument('--resume', nargs='?', const=True, default=False, help='resume most recent training')
@@ -614,6 +614,8 @@ def run(**kwargs):
         setattr(opt, k, v)
     main(opt)
 
+import warnings
+warnings.filterwarnings('ignore')
 
 if __name__ == "__main__":
     opt = parse_opt()

@@ -223,19 +223,19 @@ class LightTrackEngine:
         pred_bbox = self._post_process(bbox_pred, cls_score, scale_z, frame.shape)
         best_score = cls_score[np.unravel_index(np.argmax(cls_score), cls_score.shape)]
 
-        # ==========================================
-        # 获取最高分位置并进行跳变检测
-        # ==========================================
-        # 1. 获取 flatten 后的最大值索引 (对应 C++ cls_score_position)
-        best_idx_flat = np.argmax(cls_score)
-        # 2. 获取最高分数值
-        best_score = cls_score.flat[best_idx_flat]
-        # 3. 调用防漂移检测
-        is_abnormal_jump = self._check_pos_change(best_idx_flat)
-
-        # 4. 如果检测到异常跳动，强制将分数置为 0，触发出界的 LOST 逻辑
-        if is_abnormal_jump:
-            best_score = 0.0 # 强制认为丢失
+        # # ==========================================
+        # # 获取最高分位置并进行跳变检测
+        # # ==========================================
+        # # 1. 获取 flatten 后的最大值索引 (对应 C++ cls_score_position)
+        # best_idx_flat = np.argmax(cls_score)
+        # # 2. 获取最高分数值
+        # best_score = cls_score.flat[best_idx_flat]
+        # # 3. 调用防漂移检测
+        # is_abnormal_jump = self._check_pos_change(best_idx_flat)
+        #
+        # # 4. 如果检测到异常跳动，强制将分数置为 0，触发出界的 LOST 逻辑
+        # if is_abnormal_jump:
+        #     best_score = 0.0 # 强制认为丢失
 
         final_bbox = (
             int(self.target_pos[0] - self.target_sz[0] / 2),

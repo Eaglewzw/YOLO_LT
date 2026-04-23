@@ -25,7 +25,7 @@ if USE_TENSORRT_10:
     from modules_trt10.YOLO_Engine_TRT10 import YOLO_Detector
 
     # TRT 10 路径配置
-    YOLO_ENGINE_PATH = "./model/TensorRT_10/GDUT_UAV.pt"
+    YOLO_ENGINE_PATH = "./model/TensorRT_10/yolov5s_GLAD.pt"
     PLUGIN_LIBRARY = "./model/TensorRT_10/libmyplugins.so"
 else:
     print("正在加载 TensorRT 8.6 模块...")
@@ -45,7 +45,7 @@ else:
         print(f"⚠️ 警告: 找不到插件库 {PLUGIN_LIBRARY}")
 
 # ==================== 2. 核心配置 ====================
-VIDEO_PATH = "/home/verser/Videos/fast_drone.mp4"
+VIDEO_PATH = "/home/verser/Videos/phantom57.mp4"
 DEVICE = 'cuda'
 
 # --- 策略阈值 (新增) ---
@@ -410,10 +410,10 @@ def main():
         state_color = (0, 255, 255) if tracking_state else (0, 0, 255)
         fps_color = (0, 255, 0) if current_fps >= 30 else (0, 255, 255)
 
-        cv2.putText(display_frame, f"Mode: {state_text}", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, state_color, 2)
-        cv2.putText(display_frame, f"FPS: {current_fps * 2 :.1f}", (20, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.8, fps_color, 2)
+        # cv2.putText(display_frame, f"Mode: {state_text}", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, state_color, 2)
+        # cv2.putText(display_frame, f"FPS: {current_fps * 2 :.1f}", (20, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.8, fps_color, 2)
         config_str = f"V:{int(ENABLE_CONFIG['VISUAL_DETECT'])} M:{int(ENABLE_CONFIG['MOTION_DETECT'])} T:{int(ENABLE_CONFIG['TRACKING'])}"
-        cv2.putText(display_frame, config_str, (20, 160), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (254, 0, 0), 1)
+        # cv2.putText(display_frame, config_str, (20, 160), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (254, 0, 0), 1)
 
         # ==================== 写入视频帧 ====================
         if video_writer is not None:

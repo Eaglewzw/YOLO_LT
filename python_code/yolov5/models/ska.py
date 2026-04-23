@@ -2,7 +2,10 @@ import torch
 from torch.autograd import Function
 import triton
 import triton.language as tl
-from torch.amp import custom_fwd, custom_bwd
+try:
+    from torch.amp import custom_fwd, custom_bwd
+except ImportError:
+    from torch.cuda.amp import custom_fwd, custom_bwd
 import math
 
 def _grid(numel: int, bs: int) -> tuple:
@@ -115,7 +118,7 @@ def ska_bwd_w(
 
 class SkaFn(Function):
     @staticmethod
-    @custom_fwd(device_type='cuda')
+    @custom_fwd
     def forward(ctx, x: torch.Tensor, w: torch.Tensor) -> torch.Tensor:
         ks = int(math.sqrt(w.shape[2]))
         pad = (ks - 1) // 2
@@ -140,7 +143,7 @@ class SkaFn(Function):
         return o
 
     @staticmethod
-    @custom_bwd(device_type='cuda')
+    @custom_bwd
     def backward(ctx, go: torch.Tensor) -> tuple:
         ks, pad = ctx.ks, ctx.pad
         x, w = ctx.saved_tensors

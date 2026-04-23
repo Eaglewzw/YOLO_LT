@@ -58,13 +58,13 @@ def motion_compensate(frame1, frame2):
     motion_dist = np.array(motion_distance)
     avg_dist = np.mean(motion_dist)
 
+    _identity = np.array([[0.999, 0, 0], [0, 0.999, 0], [0, 0, 1]], dtype=np.float64)
     if len(good_old) < 9:
-        homography_matrix = np.array([[0.999, 0, 0], [0, 0.999, 0], [0, 0, 1]])
+        homography_matrix = _identity
     else:
         homography_matrix, status = cv2.findHomography(good_new, good_old, cv2.RANSAC, 3.0)
-
-    # homography_matrix, status = cv2.findHomography(good_new, good_old, cv2.RANSAC, 3.0)
-    # print('homography matrix:', homography_matrix)
+        if homography_matrix is None:
+            homography_matrix = _identity
 
     # 根据变换矩阵计算变换之后的图像
     compensated = cv2.warpPerspective(frame1, homography_matrix, (width, height), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP)
@@ -111,10 +111,13 @@ def motion_compensate_local(frame1, frame2):
     good_new = pts_cur[st == 1]  # 当前帧中的跟踪点
     good_old = pts_prev[st == 1]  # 前一帧中的跟踪点
     # print('local points num:', len(good_old))
+    _identity = np.array([[0.999, 0, 0], [0, 0.999, 0], [0, 0, 1]], dtype=np.float64)
     if len(good_old) < 18:
-        homography_matrix = np.array([[0.999, 0, 0], [0, 0.999, 0], [0, 0, 1]])
+        homography_matrix = _identity
     else:
         homography_matrix, status = cv2.findHomography(good_new, good_old, cv2.RANSAC, 3.0)
+        if homography_matrix is None:
+            homography_matrix = _identity
 
     # 根据变换矩阵计算变换之后的图像
     compensated = cv2.warpPerspective(frame1, homography_matrix, (width, height), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP)

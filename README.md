@@ -1,38 +1,66 @@
-# 🚀 Hybrid High-Performance Object Tracking System
+# YOLO_LT
 
-基于 **YOLOv5 (TensorRT)**、**LightTrack** 和 **MOD (运动目标检测)** 的混合目标检测跟踪系统。
+基于 YOLOv5、LightTrack 和运动目标检测（MOD）的小目标检测与跟踪系统，提供 Python 和 C++ 两种实现。
 
-[//]: # (<div align="center">)
+## 系统流程
 
-[//]: # (  <img src="assets/result_.png" width="80%" alt="小目标无人机检测框架" />)
+系统通过有限状态机调度三个模块：
 
-[//]: # (</div>)
-
-<div align="center">
-  <a href="assets/result.mp4.mp4">
-    <img src="assets/result_.png" width="80%" alt="点击观看视频">
-  </a>
-  <p>👆 点击图片播放视频</p>
-</div>
-
-## ✨ 核心特性
-
-* **⚡ TensorRT 加速**: YOLOv5 检测器经过 TensorRT 引擎量化与加速，支持 FP16/FP32 推理。
-* **🛠️ 混合架构 (TBD)**:
-    * **检测 (Detect)**: 结合 YOLOv5 (针对已知类别) 和 MOD (针对运动物体) 进行全局搜索。
-    * **跟踪 (Track)**: 使用 LightTrack 进行高帧率、高精度的单目标持续跟踪。
-## 🏗️ 系统架构
+1. **搜索阶段**：优先用 YOLOv5 检测目标，连续失败 N 帧后自动切换为 MOD 运动检测
+2. **跟踪阶段**：用 LightTrack 进行单目标跟踪，每隔 N 帧由 YOLO 重新验证，置信度不足则回到搜索
 
 <div align="center">
-  <img src="assets/小目标无人机检测框架.png" width="80%" alt="小目标无人机检测框架" />
+  <img src="assets/小目标无人机检测框架.png" width="80%" />
 </div>
 
-系统采用有限状态机 (FSM) 进行调度：
-1.  **SEARCHING (搜索模式)**:
-    * 优先使用 **YOLOv5** 检测目标。
-    * 若 YOLO 连续 N 帧失败，自动降级为 **MOD (运动检测)**。
-2.  **INITIALIZING (初始化过渡)**:
-    * 发现目标后的下一帧，利用缓存数据初始化 LightTrack，同时对当前帧进行跟踪（对用户透明，无感知延迟）。
-3.  **TRACKING (跟踪模式)**:
-    * 使用 **LightTrack** 进行高速跟踪。
-    * 实时监控置信度 (Score)，若低于阈值 (如 0.98) 则触发重检测机制。
+## 项目结构
+
+```
+YOLO_LT/
+├── inference_py/        # Python 实现（TensorRT 推理）
+├── inference_cpp/       # C++ 实现（ONNX Runtime 推理）
+└── assets/              # 图片资源
+```
+
+## 使用
+
+### Python
+
+```bash
+cd inference_py
+python main.py
+```
+
+在 `main.py` 中配置启用的模块：
+
+```python
+ENABLE_CONFIG = {
+    "VISUAL_DETECT": True,   # YOLOv5
+    "MOTION_DETECT": True,   # MOD
+    "TRACKING": True,        # LightTrack
+}
+```
+
+### C++
+
+```bash
+cd inference_cpp
+mkdir build && cd build
+cmake .. && make -j$(nproc)
+./Light_DT <model.onnx> <video_path>
+```
+
+## 依赖
+
+- **Python**：PyTorch (CUDA)、TensorRT 8.6/10、OpenCV
+- **C++**：C++17、OpenCV 4.6+、ONNX Runtime (CUDA)、CMake 3.10+
+
+## 消融实验
+
+项目包含在 ARD-MAV 和 GDUT-HWD 数据集上的消融实验脚本，用于评估各模块的贡献。
+
+```bash
+cd inference_py
+python ablation_ARD.py
+python ablation_GDUT.py
+```
